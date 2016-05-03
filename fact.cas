@@ -1,0 +1,65 @@
+EX	START			; 階乗
+	IN	INSTR,INLEN	; 入力をBUFFに保持　LENは文字数
+	LD	GR1,INLEN
+	CPL	GR1,=1
+	JNZ	FIN		; 符号なし16bit整数では10進1桁のみ（0-8）しか計算出来ない
+	LD	GR1,INSTR	; 1文字取得
+	CPL	GR1,='0'
+	JMI	FIN		; 文字コードで'0'より前なので終了
+	CPL	GR1,='8'
+	JPL	FIN		; 文字コードで'8'より後なので終了
+	SUBL	GR1,='0'	; 文字→数字変換
+	CALL	FACT		; 再帰的に計算するサブルーチン 引数GR1 戻り値GR2
+OUTPUT	LAD	GR3,NULL	; GR3 = 出力の最大桁数(NULL-SUB)
+	LAD	GR0,SUB
+	SUBL	GR3,GR0
+	LD	GR4,=0		; 0:10000の位，1:1000の位，…，4:1の位
+	LD	GR6,=0		; 出力文字配列のN文字目 左詰めにするために先頭が0の時はカウントアップしない
+FOR1	CPL	GR4,GR3
+	JZE	PRINT		; 1の位まで終わったら出力へ進む
+	LD	GR5,=0		; GR4桁目の値
+FOR2	SUBL	GR2,SUB,GR4	; GR4桁目の値を求めるために10^Nを引いていき，GR4桁目の値を求める
+	JOV	UNDER		; 10^Nを引いていってアンダーフローした段階でのGR5がGR4桁目の値
+	ADDL	GR5,=1		; GR4桁目の値+1
+	JUMP	FOR2
+UNDER	ADDL	GR2,SUB,GR4	; 次のFOR1のループで値を利用するため，最後に引いた値を戻す
+	ADDL	GR4,=1		; 次のループでは次の桁を判定する
+	CPL	GR5,=0
+	JZE	ZERO		; GR4桁目が0の場合
+	ADDL	GR5,='0'	; 数字→文字変換
+	ST	GR5,OUTSTR,GR6	; 文字を出力文字配列にストア
+	ADDL	GR6,=1		; 出力文字配列の桁を進める
+	JUMP	FOR1
+ZERO	CPL	GR6,=0
+	JZE	FOR1		; 先頭の桁が0の場合は出力しないので飛ばす
+	ADDL	GR5,='0'	; 数字→文字変換
+	ST	GR5,OUTSTR,GR6	; 文字を出力文字配列にストア
+	ADDL	GR6,=1		; 出力文字配列の桁を進める
+	JUMP	FOR1
+PRINT	ST	GR6,OUTLEN	; 出力文字数をGR6にセット
+	OUT	OUTSTR,OUTLEN	; 出力
+FIN	RET
+INLEN	DS	1		; 入力文字数
+INSTR	DS	256		; 入力のバッファ
+OUTLEN	DS	1		; 出力文字数
+OUTSTR	DS	5		; 答えは5桁以下なので5文字分確保
+SUB	DC	10000,1000,100,10,1	; 10進の各桁の減算に用いる
+NULL	DS	1		; 最大桁数GR3=NULL-SUB)の計算に用いる
+	END
+FACT	START			; 再帰的に階乗を計算
+	LD	GR2,=1		; 返り値の初期化
+	CPL	GR1,=2
+	JMI	FIN		; 引数が0-1ならば1を返す
+	SUBL	GR1,=1
+	CALL	FACT		; 再帰呼び出し FACT( GR1 - 1 )
+	ADDL	GR1,=1		; GR1 * FACT( GR1 - 1 )の計算のために，GR1を元に戻す
+	LD	GR3,=0		; 繰り返し加算（乗算）のループ回数
+	LD	GR4,=0		; 加算していく対象
+FOR	CPL	GR3,GR1
+	JZE	BREAK		; 繰り返し回数に達したらブレーク
+	ADDL	GR4,GR2		; GR4にFACT( GR1 - 1 )を加算
+	ADDL	GR3,=1		; ループ回数+1
+	JUMP	FOR
+BREAK	LD	GR2,GR4		; GR4を返り値にストア
+FIN	RET
+	END

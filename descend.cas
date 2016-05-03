@@ -1,0 +1,24 @@
+SORT	START			; i番目とi+1番目を比較し，後ろから確定していくバブルソート（降順）
+	LAD	GR1,DATA	; 配列の先頭のアドレス
+	LAD	GR0,NULL	; 配列の直後のアドレス
+	SUBA	GR0,GR1		; GR0 = 配列の要素数
+FOR1	SUBA	GR0,=1		; 最後の要素の添字は要素数-1なので1を引く
+	JZE	FIN		; ソート完了
+	LD	GR1,=0		; iの初期化
+FOR2	CPA	GR1,GR0
+	JZE	FOR1		; 1ループ分の比較が終了
+	LD	GR2,GR1		; i+1の初期化
+	ADDA	GR2,=1		; i+1の初期化
+	LD	GR3,DATA,GR1	; GR3 = DATA[i]
+	LD	GR4,DATA,GR2	; GR4 = DATA[i+1]
+	CPA	GR3,GR4
+	JPL	CONT		; DATA[i] > DATA[i+1]ならばスワップ処理を飛ばす
+	JZE	CONT		; DATA[i] = DATA[i+1]ならばスワップ処理を飛ばす
+	ST	GR3,DATA,GR2	; スワップ処理
+	ST	GR4,DATA,GR1	; スワップ処理
+CONT	ADDA	GR1,=1		; ++i
+	JUMP	FOR2
+FIN	RET
+DATA	DC	3,1,4,1,5
+NULL	DS	1
+	END

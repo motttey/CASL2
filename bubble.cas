@@ -1,0 +1,42 @@
+;バブルソートを行うCASLアセンブリコード
+;配列DATAに格納されている値(22,14,25,19)についてソートを行い、結果は昇順で配列DATAへ格納
+EX	START
+	LAD	GR1,DATA	;配列DATAの先頭アドレス読み出し
+	LD	GR2,SIZE		;配列のサイズをGR2へ読み出し 
+	CALL	BUBBLE		;バブルソート開始
+BUBBLE	START			;バブルソートを行う関数
+	SUBA	GR2,=1
+	LAD	GR1,DATA,GR2	;DATA[SIZE-1](末尾のアドレス)をGR1へロード
+	ST	GR1,LAST	;配列の末尾のアドレスをLASTへ格納	
+	PUSH	0,GR3		;GR3をスタックへ積む
+	PUSH	0,GR4		;GR4をスタックへ積む
+	LAD	GR3,DATA	;配列の先頭アドレスをGR3へロード
+;外側ループ:配列を0から末尾まで辿る 
+;for(i = 0;< i<SIZE ;i++)
+LOOP1	CPL	GR3,LAST	;GR3が配列末尾と同値のときFINへ分岐
+	JZE	FIN
+	LD	GR4,LAST	;そうでないとき、GR4に配列末尾の値をロード
+;内側ループ:値を比較し、条件に当てはまれば交換する
+;for(j = i+1;< j<SIZE ;j--)
+LOOP2	CPL	GR4,GR3		;GR4が先頭アドレスであるとき
+	JZE	INCR		;INCRへと分岐し、配列のアドレスをインクリメント
+	LD	GR0,-1,GR4	;DATA[GR4-1]の値をGR0にロード
+	LD	GR1,0,GR4	;DATA[GR4]の値をGR1にロード
+	CPA	GR0,GR1		;GR0とGR1を比較
+	JPL	SWAP		;GR0＞GR1のとき値を交換(小順に並び替える)
+	JUMP 	DECR		;交換が発生しない場合DECRへ飛び、配列のアドレスをデクリメント
+SWAP	ST	GR0,0,GR4	;GR1とGR4の値を交換
+	ST	GR1,-1,GR4	
+DECR   	SUBA	GR4,=1		;GR4→GR4-1
+        	JUMP    LOOP2		;LOOP2へとぶ
+INCR	ADDA	GR3,=1		;GR3=GR3+1
+	JUMP	LOOP1		;LOOP1へ飛ぶ
+FIN	LAD	GR1,DATA	;GR1に先頭アドレスをロード(GR1を復元)
+	LD	GR2,SIZE		;GR2に配列のサイズをロード(GR2を復元)
+	POP	GR4		;GR4をポップ(GR4を復元)
+	POP	GR3		;GR3をポップ(GR3を復元)
+	RET			;呼び出し元関数EXへ戻る
+DATA	DC	22,14,25,19	;データが格納される配列
+SIZE	DC	4		;配列のサイズ
+LAST	DS	1		;配列の最後の値のアドレス
+	END
